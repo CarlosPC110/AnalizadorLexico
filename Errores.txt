@@ -1,1 +1,8 @@
-Lexema	Descripcion	Linea	Columna
+Lexema              Descripción                        Línea     Columna   
+prueba              Palabra no reconocida              4         18        
+"Hola mundo);       String sin cerrar                  5         18        
+@                   Identificador inválido             6         14        
+a                   Palabra no reconocida              8         22        
+e                   Palabra no reconocida              11        13        
+"texto sin cerrar;  String sin cerrar                  11        17        
+@                   Identificador inválido             13        9         

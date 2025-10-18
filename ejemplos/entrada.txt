@@ -1,0 +1,15 @@
+clase @MiClase {
+    var $x = 10;
+    var &y = 2.5;
+    metodo vacio prueba() {
+        escribir("Hola mundo);
+        leer(@123);
+        sino {
+            $z = 45.9a;
+        }
+    }
+    %variable = "texto sin cerrar;
+    mientras ($x <=> 10) {
+        @@error;
+    }
+}
