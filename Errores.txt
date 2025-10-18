@@ -1,8 +1,8 @@
-Lexema              Descripción                        Línea     Columna   
-prueba              Palabra no reconocida              4         18        
-"Hola mundo);       String sin cerrar                  5         18        
-@                   Identificador inválido             6         14        
-a                   Palabra no reconocida              8         22        
-e                   Palabra no reconocida              11        13        
-"texto sin cerrar;  String sin cerrar                  11        17        
-@                   Identificador inválido             13        9         
+Lexema                   Descripción                                                                     Línea     
+prueba                   Palabra no reconocida                                                           4         
+"Hola mundo);            String sin cerrar                                                               5         
+@123                     Identificador inválido: tras @/$/&/% deben venir solo letras                    6         
+45.9a                    Número con sufijo no permitido                                                  8         
+%variable                Longitud de identificador inválida (2..8)                                       11        
+"texto sin cerrar;       String sin cerrar                                                               11        
+@@error                  Identificador inválido: tras @/$/&/% deben venir solo letras                    13        

@@ -1,48 +1,44 @@
-Lexema              Token                    Línea     Columna   
-clase               PalabraReservada         1         1         
-@MiClase            Identificador            1         7         
-{                   CaracterEspecial         1         16        
-var                 PalabraReservada         2         5         
-$x                  Identificador            2         9         
-=                   Operador                 2         12        
-10                  ConstanteEntera          2         14        
-;                   CaracterEspecial         2         16        
-var                 PalabraReservada         3         5         
-&y                  Identificador            3         9         
-=                   Operador                 3         12        
-2.5                 ConstanteReal            3         14        
-;                   CaracterEspecial         3         17        
-metodo              PalabraReservada         4         5         
-vacio               PalabraReservada         4         12        
-(                   CaracterEspecial         4         24        
-)                   CaracterEspecial         4         25        
-{                   CaracterEspecial         4         27        
-escribir            PalabraReservada         5         9         
-(                   CaracterEspecial         5         17        
-leer                PalabraReservada         6         9         
-(                   CaracterEspecial         6         13        
-123                 ConstanteEntera          6         15        
-)                   CaracterEspecial         6         18        
-;                   CaracterEspecial         6         19        
-sino                PalabraReservada         7         9         
-{                   CaracterEspecial         7         14        
-$z                  Identificador            8         13        
-=                   Operador                 8         16        
-45.9                ConstanteReal            8         18        
-;                   CaracterEspecial         8         23        
-}                   CaracterEspecial         9         9         
-}                   CaracterEspecial         10        5         
-%variabl            Identificador            11        5         
-=                   Operador                 11        15        
-mientras            PalabraReservada         12        5         
-(                   CaracterEspecial         12        14        
-$x                  Identificador            12        15        
-<=                  Operador                 12        18        
->                   Operador                 12        20        
-10                  ConstanteEntera          12        22        
-)                   CaracterEspecial         12        24        
-{                   CaracterEspecial         12        26        
-@error              Identificador            13        10        
-;                   CaracterEspecial         13        16        
-}                   CaracterEspecial         14        5         
-}                   CaracterEspecial         15        1         
+Lexema              Token     Línea   
+clase               -1        1       
+@MiClase            -55       1       
+{                   -49       1       
+var                 -6        2       
+$x                  -56       2       
+=                   -26       2       
+10                  -59       2       
+;                   -42       2       
+var                 -6        3       
+&y                  -57       3       
+=                   -26       3       
+2.5                 -60       3       
+;                   -42       3       
+metodo              -16       4       
+vacio               -11       4       
+(                   -47       4       
+)                   -48       4       
+{                   -49       4       
+escribir            -7        5       
+(                   -47       5       
+leer                -2        6       
+(                   -47       6       
+)                   -48       6       
+;                   -42       6       
+sino                -17       7       
+{                   -49       7       
+$z                  -56       8       
+=                   -26       8       
+;                   -42       8       
+}                   -50       9       
+}                   -50       10      
+=                   -26       11      
+mientras            -18       12      
+(                   -47       12      
+$x                  -56       12      
+<=                  -34       12      
+>                   -36       12      
+10                  -59       12      
+)                   -48       12      
+{                   -49       12      
+;                   -42       13      
+}                   -50       14      
+}                   -50       15      
