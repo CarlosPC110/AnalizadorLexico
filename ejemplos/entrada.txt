@@ -1,8 +1,19 @@
 clase @MiClase {
-    var $x = 10;
-    var &y = 2.5;
+   // + 
+   // ++ 
+   // - 
+   // -- 
+   // += 
+   // -= 
+   // *= 
+   // * 
+   <<<===>>>
+   // && || 
+   // 23.45.34
+    var $x = 10; // comentario
+    var %y = 2.5;
     metodo vacio prueba() {
-        escribir("Hola mundo);
+        escribir("Hola mundo");
         leer(@123);
         sino {
             $z = 45.9a;

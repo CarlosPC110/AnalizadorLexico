@@ -2,7 +2,7 @@
 import re
 from token_type import TokenCodes
 
-# Delimitadores “duros” que cortan palabras para errores de identificador
+# Delimitadores que cortan palabras para errores de identificador
 DELIMS = set([
     ' ', '\t', '\r', '\n',
     ';', '[', ']', ',', ':', '(', ')', '{', '}',
@@ -91,47 +91,72 @@ def _emit_ident(linea, i, errores, num_linea):
 
 
 def _emit_number(linea, i, errores, num_linea):
-    """Reconoce enteros y reales con signo opcional. Si excede rango entero -> real."""
+    """
+    Reconoce enteros y reales con signo opcional.
+    Si hay más de un punto decimal dentro de la misma 'palabra', se reporta
+    el número completo como error único: 'Número mal formado (múltiples puntos)'.
+    También marca error si hay letras pegadas (p. ej. 45.9a).
+    """
     inicio = i
+
     # signo opcional pegado
     if linea[i] in "+-":
         if i+1 >= len(linea) or not (linea[i+1].isdigit() or linea[i+1] == '.'):
             return None, i
         i += 1
-    # parte entera
+
     j = i
-    while j < len(linea) and linea[j].isdigit():
-        j += 1
-    es_real = False
-    # punto decimal opcional
+    dot_count = 0
+
+    # Debe comenzar con dígito o punto seguido de dígito
     if j < len(linea) and linea[j] == '.':
-        es_real = True
+        dot_count += 1
         j += 1
-        k = j
-        while k < len(linea) and linea[k].isdigit():
-            k += 1
-        if k == j:
-            errores.append(ErrorLexico(linea[inicio:k], "Real mal formado (no puede terminar en '.')", num_linea, inicio+1))
-            return None, k
-        j = k
+        if j >= len(linea) or not linea[j].isdigit():
+            # . sin dígitos después → real mal formado (no puede terminar en '.')
+            errores.append(ErrorLexico(linea[inicio:j], "Real mal formado (no puede terminar en '.')", num_linea, inicio+1))
+            return None, j
+
+    # consumir dígitos y (posibles) puntos
+    while j < len(linea) and (linea[j].isdigit() or linea[j] == '.'):
+        if linea[j] == '.':
+            dot_count += 1
+            if dot_count > 1:
+                # capturar el resto "continuo" del número (hasta que deje de ser dígito o punto)
+                k = j + 1
+                while k < len(linea) and (linea[k].isdigit() or linea[k] == '.'):
+                    k += 1
+                lex_err = linea[inicio:k]
+                errores.append(ErrorLexico(lex_err, "Número mal formado (múltiples puntos)", num_linea, inicio+1))
+                return None, k
+        j += 1
+
     lex = linea[inicio:j]
-    # Validar que no haya letras mezcladas (ej. 45.9a)
+
+    # si hay letras pegadas (sufijo no permitido)
     if j < len(linea) and linea[j].isalpha():
         k = j
         while k < len(linea) and linea[k].isalpha():
             k += 1
         errores.append(ErrorLexico(linea[inicio:k], "Número con sufijo no permitido", num_linea, inicio+1))
         return None, k
-    if es_real:
+
+    # decidir entero vs real
+    if dot_count == 0:
+        # entero: verificar rango
+        try:
+            val = int(lex)
+            if val < -32768 or val > 32767:
+                return Token(lex, TokenCodes.MAP["constante_real"], num_linea, inicio+1), j
+            return Token(lex, TokenCodes.MAP["constante_entera"], num_linea, inicio+1), j
+        except ValueError:
+            errores.append(ErrorLexico(lex, "Entero mal formado", num_linea, inicio+1))
+            return None, j
+    else:
+        # real válido (un solo punto)
+        # No puede terminar en punto (ya lo controlamos arriba)
         return Token(lex, TokenCodes.MAP["constante_real"], num_linea, inicio+1), j
-    # entero: verificar rango
-    try:
-        val = int(lex)
-        if val < -32768 or val > 32767:
-            return Token(lex, TokenCodes.MAP["constante_real"], num_linea, inicio+1), j
-        return Token(lex, TokenCodes.MAP["constante_entera"], num_linea, inicio+1), j
-    except ValueError:
-        return None, j
+
 
 def _emit_string(linea, i, errores, num_linea):
     inicio = i

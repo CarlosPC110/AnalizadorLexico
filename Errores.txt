@@ -1,8 +1,8 @@
 Lexema                   Descripción                                                                     Línea     
-prueba                   Palabra no reconocida                                                           4         
-"Hola mundo);            String sin cerrar                                                               5         
-@123                     Identificador inválido: tras @/$/&/% deben venir solo letras                    6         
-45.9a                    Número con sufijo no permitido                                                  8         
-%variable                Longitud de identificador inválida (2..8)                                       11        
-"texto sin cerrar;       String sin cerrar                                                               11        
-@@error                  Identificador inválido: tras @/$/&/% deben venir solo letras                    13        
+23.45.34                 Número mal formado (múltiples puntos)                                           4         
+prueba                   Palabra no reconocida                                                           7         
+@123                     Identificador inválido: tras @/$/&/% deben venir solo letras                    9         
+45.9a                    Número con sufijo no permitido                                                  11        
+%variable                Longitud de identificador inválida (2..8)                                       14        
+"texto sin cerrar;       String sin cerrar                                                               14        
+@@error                  Identificador inválido: tras @/$/&/% deben venir solo letras                    16        
