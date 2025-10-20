@@ -9,11 +9,17 @@ def main():
 
     tokens, errores = scan(codigo)
 
-    # Tabla de tokens: Lexema, Token (código), Línea
+# Tabla de tokens: Lexema, Token (código), Línea
     with open("Tokens.txt", "w", encoding="utf-8") as f:
-        f.write(f"{'Lexema':<20}{'Token':<10}{'Línea':<8}\n")
-        for t in tokens:
-            f.write(f"{t.lexema:<20}{t.codigo:<10}{t.linea:<8}\n")
+         f.write(f"{'Lexema':<25}{'Token':<15}{'PTS':<10}{'Línea':<10}\n")
+         for t in tokens:
+        # Identificar si es un identificador (según el código de token)
+            if t.codigo in [-55, -56, -57, -58]:
+              pts = -2
+            else:
+              pts = -1
+            f.write(f"{t.lexema:<25}{t.codigo:<15}{pts:<10}{t.linea:<10}\n")
+
 
 
 # Tabla de errores: Lexema, Descripción breve, Línea
