@@ -34,10 +34,10 @@ $Cadena
 $abc9
 &9Y
 %__   // subrayados no son letras, además se corta por espacio
-@      // prefijo solo
-$      // prefijo solo
-&      // prefijo solo
-%      // prefijo solo
+@_      // prefijo solo
+$_      // prefijo solo
+&_      // prefijo solo
+%_      // prefijo solo
 
 // 6) Identificadores límites de longitud
 @a              // válido: 2 chars (prefijo + 1 letra)

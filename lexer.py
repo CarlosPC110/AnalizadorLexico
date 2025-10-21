@@ -227,25 +227,82 @@ def scan(codigo: str):
                 if tok: tokens.append(tok)
                 continue
             
-            # 4 Números (posible signo pegado o inicio con '.')
-            if ch.isdigit() or (ch in "+-" and i+1 < len(linea) and (linea[i+1].isdigit() or linea[i+1]=='.')) or (ch=='.' and i+1 < len(linea) and linea[i+1].isdigit()):
-                tok, i2 = _emit_number(linea, i, errores, num_linea)
-                if tok:
-                    tokens.append(tok)
+            # === Prefijos de identificador con reglas específicas ===
+            # Objetivo:
+            # - % + letra  -> identificador (%identificador)
+            # - % solo     -> operador '%'
+            # - & + &      -> operador '&&' (lo dejamos al bloque de operadores)
+            # - & + letra  -> identificador (&identificador)
+            # - & + otro   -> error de identificador (una sola pieza)
+            # - @ / $      -> siempre van a _emit_ident (válido o error, pero en UNA sola pieza)
+                # === Prefijos de identificador con reglas específicas ===
+            if ch in "@$&%":
+                nxt = linea[i + 1] if (i + 1) < len(linea) else ""
+
+                # Delimitadores "duros" para decidir si hay "algo pegado" al prefijo
+                DELIMS_LOCAL = set([
+                    ' ', '\t', '\r', '\n',
+                    ';', '[', ']', ',', ':', '(', ')', '{', '}',
+                    '+', '-', '*', '/', '%', '=', '!', '&', '|', '<', '>', '"', '.'
+                ])
+
+                # ----- CASO '%' -----
+                if ch == '%':
+                    if nxt.isalpha():
+                        # % + letra => identificador válido de reales
+                        tok, i2 = _emit_ident(linea, i, errores, num_linea)
+                        if tok: tokens.append(tok)
+                        i = i2
+                        continue
+                    elif nxt and nxt not in DELIMS_LOCAL:
+                        # % seguido de NO-letra y NO-delimitador (p.ej. "_", "1", etc.) => error de identificador (UNA pieza)
+                        tok, i2 = _emit_ident(linea, i, errores, num_linea)
+                        # _emit_ident ya agrega el error y avanza hasta el siguiente delimitador
+                        i = i2
+                        continue
+                    else:
+                        # % solo (o seguido de delimitador) => operador aritmético
+                        tokens.append(Token('%', TokenCodes.MAP['%'], num_linea, i + 1))
+                        i += 1
+                        continue
+
+                # ----- CASO '&' -----
+                if ch == '&':
+                    if nxt == '&':
+                        # Dejar que el bloque de OPERADORES consuma "&&"
+                        pass
+                    elif nxt.isalpha():
+                        tok, i2 = _emit_ident(linea, i, errores, num_linea)
+                        if tok: tokens.append(tok)
+                        i = i2
+                        continue
+                    elif nxt and nxt not in DELIMS_LOCAL:
+                        # & seguido de no-letra/no-delimitador (p.ej. "_", "1") => error UNA pieza
+                        tok, i2 = _emit_ident(linea, i, errores, num_linea)
+                        i = i2
+                        continue
+                    else:
+                        # '&' solo no es operador en el lenguaje → error identificador inválido (avanza 1)
+                        errores.append(ErrorLexico('&', "Identificador inválido: tras @/$/&/% deben venir solo letras", num_linea, i + 1))
+                        i += 1
+                        continue
+
+                # ----- CASOS '@' y '$' -----
+                if ch in "@$":
+                    tok, i2 = _emit_ident(linea, i, errores, num_linea)
+                    if tok: tokens.append(tok)
                     i = i2
                     continue
-                else:
-                    i = max(i2, i+1)
-                    continue
+
             
-            # 7 Identificadores con control
-            if ch in "@$&%":
-                tok, i2 = _emit_ident(linea, i, errores, num_linea)
+            # 4) NÚMEROS (dígito | signo pegado + dígito/punto | '.' + dígito)
+            if ch.isdigit() or (ch in "+-" and i+1 < len(linea) and (linea[i+1].isdigit() or linea[i+1]=='.')) or (ch=='.' and i+1 < len(linea) and linea[i+1].isdigit()):
+                tok, i2 = _emit_number(linea, i, errores, num_linea)
                 if tok: tokens.append(tok)
                 i = i2
                 continue
-            
-            # 5 Operadores (max munch)
+
+            # 5) OPERADORES (max-munch)  ← SIEMPRE ANTES QUE IDENTIFICADORES CON PREFIJO
             match = None
             for op in OPERADORES_ORD:
                 if linea.startswith(op, i):
@@ -256,7 +313,7 @@ def scan(codigo: str):
                 i += len(match)
                 continue
 
-            # 6 Palabras reservadas (solo letras)
+            # 6) PALABRAS RESERVADAS (solo letras)
             if ch.isalpha():
                 j = i
                 while j < len(linea) and linea[j].isalpha():
@@ -268,22 +325,19 @@ def scan(codigo: str):
                     errores.append(ErrorLexico(palabra, "Palabra no reconocida", num_linea, i+1))
                 i = j
                 continue
-            
 
-            # 8 Caracteres especiales que generan token
+            # 9) CARACTERES ESPECIALES QUE GENERAN TOKEN
             if ch in TokenCodes.ESPECIALES:
                 tokens.append(Token(ch, TokenCodes.MAP[ch], num_linea, i+1))
                 i += 1
                 continue
 
-            # 9 Cualquier otro símbolo
+            # 10) SÍMBOLO NO RECONOCIDO
             errores.append(ErrorLexico(ch, "Símbolo no reconocido", num_linea, i+1))
             i += 1
-            
+
+            # 11) ANTI-CICLO (por seguridad extra)
             if i == prev_i:
-                # nunca nos quedamos en el mismo índice
-                errores.append(ErrorLexico(linea[i], "Bloqueo evitado: forzando avance", num_linea, i+1))
-                i += 1
-                
+                i += 1                
                 
     return tokens, errores
