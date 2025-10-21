@@ -1,26 +1,133 @@
-clase @MiClase {
-   // + 
-   // ++ 
-   // - 
-   // -- 
-   // += 
-   // -= 
-   // *= 
-   // * 
-   <<<===>>>
-   // && || 
-   // 23.45.34
-    var $x = 10; // comentario
-    var %y = 2.5;
-    metodo vacio prueba() {
-        escribir("Hola mundo");
-        leer(@123);
-        sino {
-            $z = 45.9a;
+// ===============================================
+// PRUEBAS ROBUSTAS PARA ANALIZADOR LÉXICO (tests_lexico.txt)
+// Cada bloque prueba casos especiales para detectar ciclos o clasificaciones incorrectas.
+// Comentarios con // deben ser ignorados por el lexer según la especificación.
+// ===============================================
+
+// 1) Palabras reservadas básicas
+clase leer switch posxy entero var escribir encaso limpiar real vacio si repite ejecutar regresar metodo sino mientras cadena salir
+
+// 2) Operadores aritméticos, relacionales y lógicos, incluyendo max-munch
++ - * / % = ++ -- += -= /= *=
+< <= != > >= ==
+! && ||
+
+// 3) Caracteres especiales que generan token
+; [ ] , : ( ) { }
+
+// 4) Identificadores válidos (solo letras luego del prefijo, longitud 2..8 total)
+@A
+@Abc
+$nombre
+&X
+%RealX
+@Clase
+$Cadena
+&Entero
+%Real
+@Metodo
+
+// 5) Identificadores inválidos (error debe ser la “palabra completa”)
+@1
+@123
+@@error
+$abc9
+&9Y
+%__   // subrayados no son letras, además se corta por espacio
+@      // prefijo solo
+$      // prefijo solo
+&      // prefijo solo
+%      // prefijo solo
+
+// 6) Identificadores límites de longitud
+@a              // válido: 2 chars (prefijo + 1 letra)
+@ABCDEFG        // válido: 8 chars (prefijo + 7 letras)
+@ABCDEFGH       // inválido: 9 chars (prefijo + 8 letras)
+$ABCDEFGH       // inválido
+&ABCDEFGH       // inválido
+%ABCDEFGH       // inválido
+
+// 7) Números enteros y rango
+0
+-1
+32767           // entero válido en el borde superior
+-32768          // entero válido en el borde inferior
+32768           // fuera de rango entero -> debe salir como real
+-40000          // fuera de rango entero -> debe salir como real
+
+// 8) Reales válidos e inválidos
+.5              // real válido iniciando con punto
+12.0            // real válido
+12.             // real inválido: no puede terminar en punto
+23.45.34        // inválido: múltiples puntos en la MISMA ‘palabra’ deben ser 1 error
+45.9kg          // inválido: número con sufijo alfabético no permitido
+-0.125
++3.1416
+
+// 9) Cadenas (string)
+"hola"
+"con espacios y simbolos ; [ ] , : ( ) { }"
+"str               // inválida: sin cerrar (mismo renglón)
+
+// 10) Comentarios (deben ignorarse) y mezcla
+leer // esto es un comentario
+escribir // otro comentario con operadores ++ -- && || <= >= == !=
+
+// 11) Corridas de operadores para probar max-munch y que no se cicle
+<<<===>>>
+>>>===>>
+<<=<=<==
+
+// 12) Casos que antes podían ciclar: && y || junto a identificadores inválidos
+&& || @123 @@error 23.45.34 $Ok &X
+&&&          // ‘&&’ operador y ‘&’ sobrante → error de identificador o símbolo según tu regla
+|||"x"       // ‘||’ operador, luego ‘|’ desconocido, luego string
+&            // prefijo solo → error
+|            // símbolo no reconocido (si no está definido como operador)
+
+// 13) Separadores y espacios/TABs (BCO/TAB)
+		  	   // tabs y espacios
+clase		var		"ok"
+(  [  {  ,  :  ;  )  ]  }
+
+// 14) Mezcla grande realista
+clase @MiClase { 
+    metodo @DoIt ( ) { 
+        entero &X , &Y ;
+        real %R ;
+        cadena $S ;
+        // Operaciones
+        &X = 10 ;
+        &Y = 20 ;
+        %R = .5 ;
+        si ( &X < &Y && %R >= .5 ) {
+            escribir "Menor y real ok" ;
+        } sino {
+            escribir "Otro caso" ;
         }
-    }
-    %variable = "texto sin cerrar;
-    mientras ($x <=> 10) {
-        @@error;
+        // Errores a propósito
+        @1 @ABCDEFGH 12. 23.45.34 45.9kg
+        // Fin
+        regresar ;
     }
 }
+
+// 15) Mezcla con todos los operadores lógicos/relacionales/aritméticos
+! && || < <= != > >= == = + - * / % ++ -- += -= /= *=
+
+// 16) Borde: punto al inicio varias veces (deben cortarse correctamente en palabras separadas)
+.5 .6 . .7 .8.9
+
+// 17) Un identificador inmediatamente seguido de operador/espacio
+&Var++
+$Cadena== "hola"
+@A<=%Real
+%R+=.5
+
+// 18) Casos con paréntesis y listas
+( @A , &B , %R , $S )
+[ @AA , @BB , @CC ]
+{ $X , $Y , $Z }
+
+// 19) Probando ‘posxy’ palabra reservada junto a números y comas
+posxy ( 10 , 20 ) ; posxy ( -3 , .5 ) ;

@@ -40,35 +40,52 @@ DIGITOS = "0123456789"
 
 def _emit_ident(linea, i, errores, num_linea):
     """
-    Reconoce identificadores que empiezan con @ $ & % y luego SOLO letras.
-    Longitud total (incluyendo el prefijo) entre 2 y 8.
+    Identificadores:
+      - Deben iniciar con @, $, & o %.
+      - Después del prefijo, SOLO letras [A-Za-z].
+      - Longitud total (incluido el prefijo) entre 2 y 8.
     Si el carácter inmediatamente después del prefijo NO es letra,
-    el error debe abarcar la 'palabra completa' hasta el siguiente delimitador.
+    se reporta como error la 'palabra completa' (p.ej. @@error, @123),
+    consumiendo repeticiones del prefijo y luego hasta el siguiente delimitador.
     """
     inicio = i
     ctrl = linea[i]
-    i += 1  # nos movemos al primer carácter después del prefijo
+    i += 1  # nos movemos al carácter después del prefijo
 
-    # Caso 1: inmediatamente después del prefijo NO hay letra → error con palabra completa
+    # Delimitadores “duros” locales (no dependemos de variables externas)
+    DELIMS = set([
+        ' ', '\t', '\r', '\n',
+        ';', '[', ']', ',', ':', '(', ')', '{', '}',
+        '+', '-', '*', '/', '%', '=', '!', '&', '|', '<', '>', '"', '.'
+    ])
+
+    # Caso de error: no hay letra tras el prefijo
     if i >= len(linea) or not linea[i].isalpha():
-        fin = _next_word_end(linea, inicio)  # incluye cosas como @@error, @123, @#foo
-        lex_err = linea[inicio:fin]
+        fin = i
+        # Consumir repeticiones del mismo prefijo (ej. &&, @@, $$, %%)
+        while fin < len(linea) and linea[fin] == ctrl:
+            fin += 1
+        # Consumir “palabra” hasta delimitador duro
+        while fin < len(linea) and linea[fin] not in DELIMS:
+            fin += 1
+
+        lex_err = linea[inicio:fin] if fin > inicio else linea[inicio:inicio+1]
         errores.append(ErrorLexico(
             lex_err,
             "Identificador inválido: tras @/$/&/% deben venir solo letras",
             num_linea,
             inicio + 1
         ))
-        return None, fin
+        return None, max(fin, inicio + 1)  # garantizar avance
 
-    # Caso 2: sí hay letras → consumimos SOLO letras (regla del lenguaje)
+    # Camino válido: consumir SOLO letras (regla del lenguaje)
     j = i
     while j < len(linea) and linea[j].isalpha():
         j += 1
 
     lex = linea[inicio:j]  # prefijo + letras
 
-    # Validaciones de longitud 2..8 (incluye el prefijo)
+    # Validación de longitud
     if len(lex) < 2 or len(lex) > 8:
         errores.append(ErrorLexico(
             lex,
@@ -78,7 +95,7 @@ def _emit_ident(linea, i, errores, num_linea):
         ))
         return None, j
 
-    # Clasificar por tipo de control
+    # Clasificación por tipo
     tipo_key = {
         '@': "@identificador",
         '$': "$identificador",
@@ -90,72 +107,84 @@ def _emit_ident(linea, i, errores, num_linea):
     return Token(lex, codigo, num_linea, inicio + 1), j
 
 
+
 def _emit_number(linea, i, errores, num_linea):
     """
-    Reconoce enteros y reales con signo opcional.
-    Si hay más de un punto decimal dentro de la misma 'palabra', se reporta
-    el número completo como error único: 'Número mal formado (múltiples puntos)'.
-    También marca error si hay letras pegadas (p. ej. 45.9a).
+    Números:
+      - Signo opcional (+/-) PEGADO.
+      - Enteros o reales (un solo punto). Pueden iniciar con punto si luego hay dígito.
+      - NO pueden terminar en punto.
+      - Si hay múltiples puntos en la MISMA 'palabra', se reporta un único error con el lexema completo.
+      - Si hay letras pegadas (p.ej. 45.9kg), error 'Número con sufijo no permitido'.
+      - Entero fuera de [-32768, 32767] se clasifica como real.
+    Siempre avanza el índice para evitar ciclos.
     """
     inicio = i
 
-    # signo opcional pegado
+    # Si empieza con signo, validar que siga dígito o '.'
     if linea[i] in "+-":
-        if i+1 >= len(linea) or not (linea[i+1].isdigit() or linea[i+1] == '.'):
-            return None, i
+        if i + 1 >= len(linea) or not (linea[i + 1].isdigit() or linea[i + 1] == '.'):
+            # No es número, consume SOLO el signo para evitar ciclo
+            return None, i + 1
         i += 1
 
     j = i
     dot_count = 0
 
-    # Debe comenzar con dígito o punto seguido de dígito
+    # Caso de inicio con '.': debe venir un dígito
     if j < len(linea) and linea[j] == '.':
         dot_count += 1
         j += 1
         if j >= len(linea) or not linea[j].isdigit():
-            # . sin dígitos después → real mal formado (no puede terminar en '.')
-            errores.append(ErrorLexico(linea[inicio:j], "Real mal formado (no puede terminar en '.')", num_linea, inicio+1))
+            # ".<no-dígito>" -> real mal formado (termina en '.')
+            errores.append(ErrorLexico(linea[inicio:j], "Real mal formado (no puede terminar en '.')", num_linea, inicio + 1))
             return None, j
 
-    # consumir dígitos y (posibles) puntos
+    # Consumir dígitos/puntos (controlando múltiples puntos)
     while j < len(linea) and (linea[j].isdigit() or linea[j] == '.'):
         if linea[j] == '.':
             dot_count += 1
             if dot_count > 1:
-                # capturar el resto "continuo" del número (hasta que deje de ser dígito o punto)
+                # Consumir el resto continuo de dígitos/puntos para reportar un solo error
                 k = j + 1
                 while k < len(linea) and (linea[k].isdigit() or linea[k] == '.'):
                     k += 1
                 lex_err = linea[inicio:k]
-                errores.append(ErrorLexico(lex_err, "Número mal formado (múltiples puntos)", num_linea, inicio+1))
+                errores.append(ErrorLexico(lex_err, "Número mal formado (múltiples puntos)", num_linea, inicio + 1))
                 return None, k
         j += 1
 
     lex = linea[inicio:j]
 
-    # si hay letras pegadas (sufijo no permitido)
+    # Si justo después hay letras (sufijo), capturarlas para un error único
     if j < len(linea) and linea[j].isalpha():
         k = j
         while k < len(linea) and linea[k].isalpha():
             k += 1
-        errores.append(ErrorLexico(linea[inicio:k], "Número con sufijo no permitido", num_linea, inicio+1))
+        errores.append(ErrorLexico(linea[inicio:k], "Número con sufijo no permitido", num_linea, inicio + 1))
         return None, k
 
-    # decidir entero vs real
+    # Si tiene un solo punto, no puede terminar en '.'
+    if dot_count == 1 and lex.endswith('.'):
+        errores.append(ErrorLexico(lex, "Real mal formado (no puede terminar en '.')", num_linea, inicio + 1))
+        return None, j
+
+    # Decidir entero vs real
     if dot_count == 0:
-        # entero: verificar rango
+        # Entero: verificar rango
         try:
             val = int(lex)
             if val < -32768 or val > 32767:
-                return Token(lex, TokenCodes.MAP["constante_real"], num_linea, inicio+1), j
-            return Token(lex, TokenCodes.MAP["constante_entera"], num_linea, inicio+1), j
+                return Token(lex, TokenCodes.MAP["constante_real"], num_linea, inicio + 1), j
+            return Token(lex, TokenCodes.MAP["constante_entera"], num_linea, inicio + 1), j
         except ValueError:
-            errores.append(ErrorLexico(lex, "Entero mal formado", num_linea, inicio+1))
+            # por robustez (no debería ocurrir si solo hay dígitos)
+            errores.append(ErrorLexico(lex, "Entero mal formado", num_linea, inicio + 1))
             return None, j
     else:
-        # real válido (un solo punto)
-        # No puede terminar en punto (ya lo controlamos arriba)
-        return Token(lex, TokenCodes.MAP["constante_real"], num_linea, inicio+1), j
+        # Real válido (un solo punto y no termina en '.')
+        return Token(lex, TokenCodes.MAP["constante_real"], num_linea, inicio + 1), j
+
 
 
 def _emit_string(linea, i, errores, num_linea):
@@ -182,30 +211,23 @@ def scan(codigo: str):
         i = 0
         while i < len(linea):
             ch = linea[i]
-
-            # Espacios / tabs / BCO (lo interpretamos como espacios)
+            prev_i = i  # <- AGREGAR (para la garantía de avance)
+            # 1 Espacios / tabs / BCO (lo interpretamos como espacios)
             if ch in [' ', '\t', '\r']:
                 i += 1
                 continue
 
-            # Comentarios //
+            # 2 Comentarios //
             if linea.startswith("//", i):
                 break
 
-            # String
+            # 3 String
             if ch == '"':
                 tok, i = _emit_string(linea, i, errores, num_linea)
                 if tok: tokens.append(tok)
                 continue
-
-            # Identificadores con control
-            if ch in "@$&%":
-                tok, i2 = _emit_ident(linea, i, errores, num_linea)
-                if tok: tokens.append(tok)
-                i = i2
-                continue
-
-            # Números (posible signo pegado o inicio con '.')
+            
+            # 4 Números (posible signo pegado o inicio con '.')
             if ch.isdigit() or (ch in "+-" and i+1 < len(linea) and (linea[i+1].isdigit() or linea[i+1]=='.')) or (ch=='.' and i+1 < len(linea) and linea[i+1].isdigit()):
                 tok, i2 = _emit_number(linea, i, errores, num_linea)
                 if tok:
@@ -215,8 +237,26 @@ def scan(codigo: str):
                 else:
                     i = max(i2, i+1)
                     continue
+            
+            # 7 Identificadores con control
+            if ch in "@$&%":
+                tok, i2 = _emit_ident(linea, i, errores, num_linea)
+                if tok: tokens.append(tok)
+                i = i2
+                continue
+            
+            # 5 Operadores (max munch)
+            match = None
+            for op in OPERADORES_ORD:
+                if linea.startswith(op, i):
+                    match = op
+                    break
+            if match:
+                tokens.append(Token(match, TokenCodes.MAP[match], num_linea, i+1))
+                i += len(match)
+                continue
 
-            # Palabras reservadas (solo letras)
+            # 6 Palabras reservadas (solo letras)
             if ch.isalpha():
                 j = i
                 while j < len(linea) and linea[j].isalpha():
@@ -228,26 +268,22 @@ def scan(codigo: str):
                     errores.append(ErrorLexico(palabra, "Palabra no reconocida", num_linea, i+1))
                 i = j
                 continue
+            
 
-            # Operadores (max munch)
-            match = None
-            for op in OPERADORES_ORD:
-                if linea.startswith(op, i):
-                    match = op
-                    break
-            if match:
-                tokens.append(Token(match, TokenCodes.MAP[match], num_linea, i+1))
-                i += len(match)
-                continue
-
-            # Caracteres especiales que generan token
+            # 8 Caracteres especiales que generan token
             if ch in TokenCodes.ESPECIALES:
                 tokens.append(Token(ch, TokenCodes.MAP[ch], num_linea, i+1))
                 i += 1
                 continue
 
-            # Cualquier otro símbolo
+            # 9 Cualquier otro símbolo
             errores.append(ErrorLexico(ch, "Símbolo no reconocido", num_linea, i+1))
             i += 1
-
+            
+            if i == prev_i:
+                # nunca nos quedamos en el mismo índice
+                errores.append(ErrorLexico(linea[i], "Bloqueo evitado: forzando avance", num_linea, i+1))
+                i += 1
+                
+                
     return tokens, errores
