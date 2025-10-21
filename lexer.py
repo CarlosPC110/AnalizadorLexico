@@ -44,48 +44,60 @@ def _emit_ident(linea, i, errores, num_linea):
       - Deben iniciar con @, $, & o %.
       - Después del prefijo, SOLO letras [A-Za-z].
       - Longitud total (incluido el prefijo) entre 2 y 8.
-    Si el carácter inmediatamente después del prefijo NO es letra,
-    se reporta como error la 'palabra completa' (p.ej. @@error, @123),
-    consumiendo repeticiones del prefijo y luego hasta el siguiente delimitador.
+      - Si tras las letras hay cualquier carácter no delimitador (p. ej. dígitos, '_'),
+        se reporta UN error con la palabra completa, p.ej. $abc9, %__ , @abc9.
+    Siempre avanza el índice.
     """
     inicio = i
     ctrl = linea[i]
-    i += 1  # nos movemos al carácter después del prefijo
+    i += 1  # carácter después del prefijo
 
-    # Delimitadores “duros” locales (no dependemos de variables externas)
+    # Delimitadores “duros”
     DELIMS = set([
         ' ', '\t', '\r', '\n',
         ';', '[', ']', ',', ':', '(', ')', '{', '}',
         '+', '-', '*', '/', '%', '=', '!', '&', '|', '<', '>', '"', '.'
     ])
 
-    # Caso de error: no hay letra tras el prefijo
+    # 1) Si NO hay letra tras el prefijo → error en UNA sola pieza
     if i >= len(linea) or not linea[i].isalpha():
         fin = i
-        # Consumir repeticiones del mismo prefijo (ej. &&, @@, $$, %%)
+        # consumir repeticiones del mismo prefijo (p. ej. @@, $$, &&, %%)
         while fin < len(linea) and linea[fin] == ctrl:
             fin += 1
-        # Consumir “palabra” hasta delimitador duro
+        # consumir hasta delimitador duro
         while fin < len(linea) and linea[fin] not in DELIMS:
             fin += 1
-
-        lex_err = linea[inicio:fin] if fin > inicio else linea[inicio:inicio+1]
+        if fin <= inicio:
+            fin = inicio + 1
         errores.append(ErrorLexico(
-            lex_err,
+            linea[inicio:fin],
             "Identificador inválido: tras @/$/&/% deben venir solo letras",
             num_linea,
             inicio + 1
         ))
-        return None, max(fin, inicio + 1)  # garantizar avance
+        return None, fin
 
-    # Camino válido: consumir SOLO letras (regla del lenguaje)
+    # 2) Consumir SOLO letras
     j = i
     while j < len(linea) and linea[j].isalpha():
         j += 1
 
-    lex = linea[inicio:j]  # prefijo + letras
+    # 3) Si hay algo pegado NO-delimitador tras las letras → error UNA sola pieza
+    k = j
+    if k < len(linea) and linea[k] not in DELIMS:
+        while k < len(linea) and linea[k] not in DELIMS:
+            k += 1
+        errores.append(ErrorLexico(
+            linea[inicio:k],
+            "Identificador inválido: contiene caracteres no permitidos tras las letras",
+            num_linea,
+            inicio + 1
+        ))
+        return None, k
 
-    # Validación de longitud
+    # 4) Validar longitud total
+    lex = linea[inicio:j]
     if len(lex) < 2 or len(lex) > 8:
         errores.append(ErrorLexico(
             lex,
@@ -95,16 +107,17 @@ def _emit_ident(linea, i, errores, num_linea):
         ))
         return None, j
 
-    # Clasificación por tipo
+    # 5) Clasificar
     tipo_key = {
         '@': "@identificador",
         '$': "$identificador",
         '&': "&identificador",
         '%': "%identificador",
-    }.get(ctrl)
+    }[ctrl]
 
     codigo = TokenCodes.MAP[tipo_key]
     return Token(lex, codigo, num_linea, inicio + 1), j
+
 
 
 
@@ -150,7 +163,7 @@ def _emit_number(linea, i, errores, num_linea):
                 while k < len(linea) and (linea[k].isdigit() or linea[k] == '.'):
                     k += 1
                 lex_err = linea[inicio:k]
-                errores.append(ErrorLexico(lex_err, "Número mal formado (múltiples puntos)", num_linea, inicio + 1))
+                errores.append(ErrorLexico(lex_err, "Número real mal formado", num_linea, inicio + 1))
                 return None, k
         j += 1
 
@@ -191,7 +204,7 @@ def _emit_string(linea, i, errores, num_linea):
     inicio = i
     fin = linea.find('"', i+1)
     if fin == -1:
-        errores.append(ErrorLexico(linea[i:], "String sin cerrar", num_linea, i+1))
+        errores.append(ErrorLexico(linea[i:], " String sin cerrar", num_linea, i+1))
         return None, len(linea)
     lex = linea[inicio:fin+1]
     return Token(lex, TokenCodes.MAP["constante_string"], num_linea, inicio+1), fin+1
@@ -226,6 +239,12 @@ def scan(codigo: str):
                 tok, i = _emit_string(linea, i, errores, num_linea)
                 if tok: tokens.append(tok)
                 continue
+            
+            # --- Punto suelto: NO genera token ni error, se ignora ---
+            if ch == '.' and not (i + 1 < len(linea) and linea[i + 1].isdigit()):
+                i += 1
+                continue
+
             
             # === Prefijos de identificador con reglas específicas ===
             # Objetivo:

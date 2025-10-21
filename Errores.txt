@@ -1,32 +1,8 @@
 Lexema                   Descripción                                                                     Línea     
-@1                       Identificador inválido: tras @/$/&/% deben venir solo letras                    31        
-@123                     Identificador inválido: tras @/$/&/% deben venir solo letras                    32        
-@@error                  Identificador inválido: tras @/$/&/% deben venir solo letras                    33        
-&9Y                      Identificador inválido: tras @/$/&/% deben venir solo letras                    35        
-%__                      Identificador inválido: tras @/$/&/% deben venir solo letras                    36        
-@_                       Identificador inválido: tras @/$/&/% deben venir solo letras                    37        
-$_                       Identificador inválido: tras @/$/&/% deben venir solo letras                    38        
-&_                       Identificador inválido: tras @/$/&/% deben venir solo letras                    39        
-%_                       Identificador inválido: tras @/$/&/% deben venir solo letras                    40        
-@ABCDEFGH                Longitud de identificador inválida (2..8)                                       45        
-$ABCDEFGH                Longitud de identificador inválida (2..8)                                       46        
-&ABCDEFGH                Longitud de identificador inválida (2..8)                                       47        
-%ABCDEFGH                Longitud de identificador inválida (2..8)                                       48        
-12.                      Real mal formado (no puede terminar en '.')                                     61        
-23.45.34                 Número mal formado (múltiples puntos)                                           62        
-45.9kg                   Número con sufijo no permitido                                                  63        
-"str               // inválida: sin cerrar (mismo renglón)String sin cerrar                                                               70        
-@123                     Identificador inválido: tras @/$/&/% deben venir solo letras                    82        
-@@error                  Identificador inválido: tras @/$/&/% deben venir solo letras                    82        
-23.45.34                 Número mal formado (múltiples puntos)                                           82        
-&                        Identificador inválido: tras @/$/&/% deben venir solo letras                    83        
-|                        Símbolo no reconocido                                                           84        
-&                        Identificador inválido: tras @/$/&/% deben venir solo letras                    85        
-|                        Símbolo no reconocido                                                           86        
-@1                       Identificador inválido: tras @/$/&/% deben venir solo letras                    109       
-@ABCDEFGH                Longitud de identificador inválida (2..8)                                       109       
-12.                      Real mal formado (no puede terminar en '.')                                     109       
-23.45.34                 Número mal formado (múltiples puntos)                                           109       
-45.9kg                   Número con sufijo no permitido                                                  109       
-.                        Símbolo no reconocido                                                           119       
-.8.9                     Número mal formado (múltiples puntos)                                           119       
+23.45.34                 Número real mal formado                                                         3         
+prueba                   Palabra no reconocida                                                           6         
+@123                     Identificador inválido: tras @/$/&/% deben venir solo letras                    8         
+45.9a                    Número con sufijo no permitido                                                  10        
+%variable                Longitud de identificador inválida (2..8)                                       13        
+"texto sin cerrar;        String sin cerrar                                                              13        
+@@error                  Identificador inválido: tras @/$/&/% deben venir solo letras                    15        
