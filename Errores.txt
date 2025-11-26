@@ -1,8 +1,1 @@
 Lexema                   Descripción                                                                     Línea     
-23.45.34                 Número real mal formado                                                         3         
-prueba                   Palabra no reconocida                                                           6         
-@123                     Identificador inválido: tras @/$/&/% deben venir solo letras                    8         
-45.9a                    Número con sufijo no permitido                                                  10        
-%variable                Longitud de identificador inválida (2..8)                                       13        
-"texto sin cerrar;        String sin cerrar                                                              13        
-@@error                  Identificador inválido: tras @/$/&/% deben venir solo letras                    15        

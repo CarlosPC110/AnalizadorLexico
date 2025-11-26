@@ -1,0 +1,6 @@
+ANÁLISIS SINTÁCTICO - 3 error(es) encontrado(s)
+============================================================
+
+[L6] Falta operador de asignación (=, +=, -=, *=, /=, ++ o --) — encontrado '+'
+[L6] Falta '}' al final del método — encontrado '+'
+[L6] Falta '}' al final de la clase — encontrado '+'

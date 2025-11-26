@@ -1,0 +1,9 @@
+clase @Prueba
+{
+   var %x , %y , %z ; 
+   metodo vacio @main ( ) 
+   {
+       %x = 100 - (( %y + 4 ) / 2 + %z ) * ( 20 + 5 ) ; 
+       escribir ( %x ) ; 
+   }
+}

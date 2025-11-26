@@ -1,0 +1,17 @@
+clase @Prueba
+{
+   metodo vacio @main ( ) 
+   {
+       var &x ; 
+       leer ( &x) ; 
+       si ( &x % 2 == 0)
+       {      
+           escribir ("par" ) ; 
+       }
+       sino
+       {
+           escribir ("impar" ) ;            
+       }
+       escribir ( "bye" ) ; 
+   }
+}

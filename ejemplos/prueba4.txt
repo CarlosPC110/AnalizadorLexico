@@ -1,0 +1,19 @@
+clase @Prueba
+{
+   metodo vacio @main ( ) 
+   {
+       var &n, &m, &suma, &i ; 
+       leer ( &n) ; 
+       leer ( &m) ; 
+       &i = &n ; 
+       &suma = 0 ; 
+       mientras ( &i <= & &m)
+       {
+           si ( &i % 2 == 0)
+           {      
+           &suma += &i ;  
+           }
+           &i ++ ; 
+       }
+    }
+}

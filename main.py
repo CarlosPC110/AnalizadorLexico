@@ -1,9 +1,15 @@
 # main.py
 from lexer import scan
+import sys
 
 
 def main():
-    ruta_fuente = "ejemplos/entrada.txt"
+    # Default file if no argument provided
+    if len(sys.argv) > 1:
+        ruta_fuente = sys.argv[1]
+    else:
+        ruta_fuente = "ejemplos/prueba5.txt"
+        
     with open(ruta_fuente, "r", encoding="utf-8") as f:
         codigo = f.read()
 

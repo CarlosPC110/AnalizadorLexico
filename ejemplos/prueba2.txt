@@ -1,0 +1,24 @@
+clase @Prueba
+{
+   var  &fact, &x ; 
+   metodo entero @calF( &n )
+   {
+      var &i ; 
+      &i = 1 ; 
+      &f = 1 ; 
+      mientras ( &i <= &n )
+      {
+         &f = &f * &i ;
+         &i = &i + 1 ; 
+      }
+      regresar ( &f ) ; 
+    }   
+
+
+   metodo vacio @main ( ) 
+   {
+       leer ( &x) ; 
+       %fact = @calF ( &x );       
+       escribir ( %fact ) ; 
+   }
+}

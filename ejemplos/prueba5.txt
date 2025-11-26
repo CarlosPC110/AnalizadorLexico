@@ -1,0 +1,48 @@
+clase @Inicio {
+
+    var &x;
+    var %cal;
+    var $nombre[10];
+
+    metodo entero @sumar(&n, &m) {
+        var &res;
+        &res = &n + &m;
+        regresar(&res);
+    }
+
+    metodo vacio @inicio() {
+
+        leer(&x);
+
+        si (&x > 10) {
+            escribir("Mayor");
+        }
+        sino {
+            escribir("Menor");
+        }
+
+        mientras (&x < 20) {
+            &x = &x + 1;
+        }
+
+        repite {
+            escribir($nombre);
+        }
+        mientras (&x < 5);
+
+        switch(&x) {
+
+            encaso 1:
+                escribir("UNO");
+
+            encaso 2:
+                escribir("DOS");
+
+            encaso 0:     // caso por defecto
+                escribir("OTRO");
+        }
+
+        salir;
+    }
+
+}
